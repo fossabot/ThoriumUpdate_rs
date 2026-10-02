@@ -1,0 +1,30 @@
+[package]
+name = "ThroiumUpdate"
+description = "Thorium Update"
+version = "0.1.0"
+edition = "2024"
+authors = ["just-shadyumbrella"]
+repository = "https://github.com/just-shadyumbrella/ThoriumUpdate_rs"
+
+[dependencies]
+const_format = "*"
+natord = "*"
+regex = "*"
+sonic-rs = "*"
+owo-colors = "*"
+hide_console = "*"
+termimad = "*"
+rayon = "*"
+
+[build-dependencies]
+const_format = "*"
+winresource = "*"
+chrono = "*"
+
+[profile.release]
+# opt-level = "z" # Uncomment to enable zero optimization (slower but smaller binary)
+opt-level = 3
+strip = true
+lto = true
+panic = "abort"
+codegen-units = 1
