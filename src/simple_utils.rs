@@ -1,25 +1,13 @@
-use std::{env, fs, process::Command};
+use regex::Regex;
+use std::{fs, process::Command};
 
-// pub fn simple_which(keyword: &str) -> bool {
-//     // Current directory first
-//     if let Ok(path) = which_in(keyword, std::env::current_dir()) {
-//         return path.is_file();
-//     }
-//     // Then PATH
-//     if let Ok(path) = which(keyword) {
-//         return path.is_file();
-//     }
-//     false
-// }
-//
-
-const ARIA2_CMD: &str = ".\\aria2c.exe";
+const ARIA2_CMD: &str = r".\aria2c.exe";
 #[cfg(all(target_os = "windows", target_pointer_width = "32"))]
 const ARIA2_BIN: &[u8] = include_bytes!("../assets/aria2c_x86.exe");
 #[cfg(all(target_os = "windows", target_pointer_width = "64"))]
 const ARIA2_BIN: &[u8] = include_bytes!("../assets/aria2c_x64.exe");
 const ARIA2_CONFIG: &str = include_str!("../assets/aria2.conf");
-const ARIA2_CONF: &str = ".\\aria2.conf";
+const ARIA2_CONF: &str = r".\aria2.conf";
 
 pub fn aria2_downloader(url: &str, output_path: &str, config: Option<&str>) -> i32 {
     if let Some(config) = config {
@@ -41,6 +29,11 @@ pub fn aria2_downloader(url: &str, output_path: &str, config: Option<&str>) -> i
     fs::remove_file(ARIA2_CMD).unwrap();
     fs::remove_file(ARIA2_CONF).unwrap();
     status
+}
+
+pub fn regex_replace_all(input: &str, pattern: &str, replacement: &str) -> String {
+    let regex = Regex::new(pattern).unwrap();
+    regex.replace_all(input, replacement).to_string()
 }
 
 pub fn simple_spawn(cmd: &str, args: &[&str], suppress_error: bool) -> i32 {
