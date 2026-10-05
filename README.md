@@ -1,15 +1,14 @@
 # [Thorium](https://github.com/Alex313031/thorium) Updater (Windows)
 
-Work in progress, proof of concept.
-
 Based on [`template-rs`](https://github.com/just-shadyumbrella/template-rs#prerequisites).
 
 ## Usage:
 - `/help`, `/?`: Show this
 - `/silent`: Do not show console output.
-- `/reinstall`: Reinstall Thorium without uninstalling current install.
-- `/force`: Force uninstallation of existing Thorium install if any.
-  - `/clearuserdata`: Clear Thorium user profile and data as well.
+- `/repair`: Reinstall Thorium without uninstalling current install.
+  - `/force`: Force uninstall existing Thorium install if any.
+    - `/clearuserdata`: Clear Thorium user profile and data as well.
+- `/cache`: Do not delete downloaded installer after use.
 - `/repo`: Override GitHub repository of Thorium update source. (Default: current active maintainer).
   > ```batch
   > /repo=Alex313031/thorium

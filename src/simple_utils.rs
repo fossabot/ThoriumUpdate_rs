@@ -1,19 +1,19 @@
+use rayon::prelude::*;
 use regex::Regex;
 use std::{fs, process::Command};
 
-const ARIA2_CMD: &str = r".\aria2c.exe";
+const ARIA2_CMD: &str = "./aria2c.exe";
 #[cfg(all(target_os = "windows", target_pointer_width = "32"))]
 const ARIA2_BIN: &[u8] = include_bytes!("../assets/aria2c_x86.exe");
 #[cfg(all(target_os = "windows", target_pointer_width = "64"))]
 const ARIA2_BIN: &[u8] = include_bytes!("../assets/aria2c_x64.exe");
 const ARIA2_CONFIG: &str = include_str!("../assets/aria2.conf");
-const ARIA2_CONF: &str = r".\aria2.conf";
+const ARIA2_CONF: &str = "./aria2.conf";
 
 pub fn aria2_downloader(url: &str, output_path: &str, config: Option<&str>) -> i32 {
-    if let Some(config) = config {
-        fs::write(ARIA2_CONF, config).unwrap();
-    } else {
-        fs::write(ARIA2_CONF, ARIA2_CONFIG).unwrap();
+    match config {
+        Some(config) => fs::write(ARIA2_CONF, config).unwrap(),
+        None => fs::write(ARIA2_CONF, ARIA2_CONFIG).unwrap(),
     }
     fs::write(ARIA2_CMD, ARIA2_BIN).unwrap();
     let status = simple_spawn(
@@ -37,31 +37,32 @@ pub fn regex_replace_all(input: &str, pattern: &str, replacement: &str) -> Strin
 }
 
 pub fn simple_spawn(cmd: &str, args: &[&str], suppress_error: bool) -> i32 {
-    let mut process = Command::new(cmd)
-        .args(args)
+    let mut cmd_splits = shell_words::split(cmd).unwrap_or_default();
+    cmd_splits.extend(args.par_iter().map(|s| s.to_string()).collect::<Vec<_>>());
+
+    let mut process = Command::new(&cmd_splits[0])
+        .args(&cmd_splits[1..])
         .spawn()
-        .map_err(|e| format!("{} failed: {}", cmd, e))
+        .map_err(|e| eprintln!("ERROR: {} ({})", cmd, e))
         .unwrap();
 
-    let status = process.wait().map_err(|e| e.to_string()).unwrap();
+    let status = process.wait().unwrap();
     if !status.success() {
         if !suppress_error {
             eprintln!("ERROR: {} ({})", cmd, status);
         }
-        if let Some(code) = status.code() {
-            return code;
-        } else {
-            return 1;
+        match status.code() {
+            Some(code) => return code,
+            None => return 1,
         }
     }
     0
 }
 
 pub fn simple_open(path: &str, as_location: bool) {
-    let opener = "explorer.exe";
     if as_location {
-        simple_spawn(opener, &["/select,", path], true);
+        simple_spawn("explorer.exe", &["/select,", path], true);
     } else {
-        simple_spawn(opener, &[path], true);
+        simple_spawn("cmd.exe", &["/c", "start", "/wait", path], true);
     }
 }

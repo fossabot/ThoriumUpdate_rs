@@ -1,3 +1,3 @@
-[build] # Automatic CPU target optimization for some crates
-rustflags = ["-C", "target-cpu=native"]
-# target = "i686-pc-windows-msvc" # Planned target until <https://github.com/cloudwego/sonic-rs/issues/231> resolved
+[build]
+rustflags = ["-C", "target-feature=+sse2"]
+# target = "i686-pc-windows-msvc" # Until needed

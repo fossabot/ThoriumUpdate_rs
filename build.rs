@@ -35,7 +35,7 @@ fn main() -> std::io::Result<()> {
 
     res.set("CompanyName", env!("CARGO_PKG_AUTHORS"))
         .set("FileDescription", env!("CARGO_PKG_DESCRIPTION"))
-        // .set("FileVersion", "10.0.26100.1 (WinBuild.160101.0800)")
+        // .set("FileVersion", "10.0.26100.1 (WinBuild.160101.0800)")z
         .set("InternalName", origin)
         .set(
             "LegalCopyright",
@@ -47,7 +47,10 @@ fn main() -> std::io::Result<()> {
         )
         .set("OriginalFilename", origin)
         .set("ProductName", env!("CARGO_PKG_DESCRIPTION"))
-        .set("ProductVersion", &rev);
+        .set(
+            "ProductVersion",
+            &format!("{} ({})", env!("CARGO_PKG_VERSION"), rev),
+        );
     res.compile()?;
     Ok(())
 }

@@ -1,5 +1,11 @@
+permissions:
+  contents: write
+
 name: Build
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 env:
@@ -74,3 +80,12 @@ jobs:
               target/release/*.exe
               target/release/*.dll
             if-no-files-found: error
+
+        - name: Release
+          uses: softprops/action-gh-release@v3
+          if: github.ref_type == 'tag'
+          with:
+            prerelease: true
+            files: |
+              target/release/*.exe
+              target/release/*.dll

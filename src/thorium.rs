@@ -1,7 +1,7 @@
 use crate::simple_utils::*;
 use const_format::concatcp;
 use rayon::prelude::*;
-use sonic_rs::{JsonContainerTrait, JsonValueTrait, Value};
+use simd_json::prelude::*;
 use std::{fs, process::exit};
 use windows_registry::*;
 
@@ -17,7 +17,7 @@ pub struct InstallerInfo {
     pub url: String,
 }
 
-pub fn get_installer_info(
+pub fn get_package_info(
     repo: &str,
     sources: &str,
     mut simd: Option<&str>,
@@ -31,9 +31,9 @@ pub fn get_installer_info(
         exit(status);
     }
 
-    let json = fs::read_to_string(&sources).unwrap();
+    let mut json = fs::read(&sources).unwrap();
     fs::remove_file(&sources).unwrap();
-    let root = sonic_rs::from_str::<Value>(&json).unwrap();
+    let root = simd_json::to_owned_value(&mut json).unwrap();
     let version = root["tag_name"].as_str().unwrap();
     let value = if beta {
         &root[0]["assets"]
@@ -116,8 +116,8 @@ pub fn get_installer_info(
         return None;
     }
     Some(InstallerInfo {
-        version: version.replace("M", "").to_owned(),
-        url: assets.into_iter().next().unwrap(),
+        version: version.replace("M", ""),
+        url: assets.first().unwrap().to_owned(),
     })
 }
 
@@ -146,11 +146,3 @@ pub fn uninstall_reg_get_string(name: &str) -> Option<String> {
     }
     None
 }
-
-// pub fn install(args: &[String]) {
-
-// }
-
-// pub fn uninstall(args: &[String]) {
-
-// }

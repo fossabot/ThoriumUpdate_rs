@@ -1,15 +1,15 @@
 use hide_console::hide_console;
 use rayon::prelude::*;
 use regex::Regex;
-use std::{env, process::exit};
+use std::{env, fs, process::exit};
 use termimad::MadSkin;
 use termimad::crossterm::style::Attribute::*;
 use versions::Versioning;
 
 mod simple_utils;
 use simple_utils::*;
-mod installer;
-use installer::*;
+mod thorium;
+use thorium::*;
 
 fn help() {
     let mut readme = include_str!("../readme.md")
@@ -36,7 +36,9 @@ fn main() {
     let mut repo = REPO.to_owned();
     let mut sources = RELEASE_SOURCES.to_owned();
 
+    let mut repair = false;
     let mut force = false;
+    let mut cache = false;
     let mut clearuserdata = false;
     let mut simd: Option<String> = None;
 
@@ -64,8 +66,16 @@ fn main() {
                     hide_console();
                     true
                 }
+                "repair" => {
+                    repair = true;
+                    true
+                }
                 "force" => {
                     force = true;
+                    true
+                }
+                "cache" => {
+                    cache = true;
                     true
                 }
                 "clearuserdata" => {
@@ -127,25 +137,64 @@ fn main() {
         );
     }
 
-    let installer_info = get_installer_info(&repo, &sources, simd.as_deref());
+    let installer_info = get_package_info(&repo, &sources, simd.as_deref());
     if let Some(info) = installer_info {
-        let v1 = Versioning::new(&info.version).unwrap_or_default();
-        println!("Currently installed: {}", v1.to_string());
-        let v2 = Versioning::new(uninstall_reg_get_string("Version").unwrap_or_default())
+        let v1 = Versioning::new(uninstall_reg_get_string("Version").unwrap_or_default())
             .unwrap_or_default();
+        println!("Currently installed: {}", v1.to_string());
+        let v2 = Versioning::new(&info.version).unwrap_or_default();
         println!("Upstream: {}", v2.to_string());
-        if v1 > v2 || force {
-            let download_path = "setup.exe";
+        if repair || v1 < v2 {
+            let download_path = "./setup.exe";
             let status = aria2_downloader(&info.url, &download_path, None);
             if status != 0 {
                 exit(status)
             }
-            simple_open(&download_path, false);
+
+            if force {
+                eprintln!("WARNING: Force install current installed Thorium...");
+                let uninstall_string =
+                    uninstall_reg_get_string("UninstallString").unwrap_or_default();
+                let status = simple_spawn(
+                    &uninstall_string,
+                    if clearuserdata {
+                        eprintln!("WARNING: Clear user profile...");
+                        &["--delete-profile"]
+                    } else {
+                        &[]
+                    },
+                    false,
+                );
+                if status != 0 {
+                    exit(status)
+                }
+            }
+
+            let setup_args: Vec<&str> = ["--silent"]
+                .into_iter()
+                .chain(args.par_iter().map(|s| s.as_str()).collect::<Vec<_>>())
+                .collect();
+            println!("Installing Thorium...");
+            let status = simple_spawn(&download_path, &setup_args, false);
+            if !cache {
+                fs::remove_file(&download_path).ok();
+            }
+            if status != 0 {
+                exit(status)
+            }
+
+            let v1 = Versioning::new(uninstall_reg_get_string("Version").unwrap_or_default())
+                .unwrap_or_default();
+            if v1 < v2 {
+                eprintln!("ERROR: Thorium isn't updated.");
+                exit(1)
+            }
             println!("Thorium browser has been updated.");
         } else {
             println!("You are up to date.");
         }
     } else {
+        eprintln!("ERROR: Could not get package info.");
         exit(2)
     }
 }
