@@ -1,9 +1,7 @@
 use hide_console::hide_console;
 use rayon::prelude::*;
 use regex::Regex;
-use std::{env, fs, process::exit};
-use termimad::MadSkin;
-use termimad::crossterm::style::Attribute::*;
+use std::{env, fs, process};
 use versions::Versioning;
 
 mod simple_utils;
@@ -11,7 +9,7 @@ use simple_utils::*;
 mod thorium;
 use thorium::*;
 
-fn help() {
+fn show_help() {
     let mut readme = include_str!("../readme.md")
         .replace("(../../", &format!("({}/", env!("CARGO_PKG_REPOSITORY")));
     readme = regex_replace_all(&readme, r"(?m)^.*```.*$", "");
@@ -19,30 +17,26 @@ fn help() {
     readme = regex_replace_all(&readme, r"\[(.+)\]\((.+)\)(.)", "$1 [$2]$3");
     readme = regex_replace_all(&readme, r"(?m)^[^\S\n]+>", ">");
     readme = readme.replacen("\n", &format!(" v{}\n", env!("CARGO_PKG_VERSION")), 1);
-    let mut skin = MadSkin::default();
-    skin.italic.add_attr(Underlined);
     println!();
-    skin.print_text(&readme);
-    exit(0)
+    termimad::print_text(&readme);
 }
 
-fn main() {
-    env::set_current_dir(env::var("TMP").unwrap_or_else(
-        // Use current directory if TMP is not set
-        |_| ".".to_owned(),
-    ))
-    .unwrap();
+fn program() -> i32 {
+    let tmp = env::var("TMP").ok();
+    if tmp.is_some() {
+        env::set_current_dir(tmp.unwrap()).unwrap();
+    }
 
     let mut repo = REPO.to_owned();
     let mut sources = RELEASE_SOURCES.to_owned();
 
+    let mut help = false;
     let mut repair = false;
     let mut force = false;
     let mut cache = false;
     let mut clearuserdata = false;
     let mut simd: Option<String> = None;
 
-    // let mut installer_args: Vec<String> = vec![];
     let mut warn_args: Vec<String> = vec![];
 
     let re_kv = Regex::new(r"^/(?P<key>\w+)=(?P<val>.+)$").unwrap();
@@ -55,11 +49,11 @@ fn main() {
             let flag = &capture["flag"];
             let matched = match flag {
                 "?" => {
-                    help();
+                    help = true;
                     true
                 }
                 "help" => {
-                    help();
+                    help = true;
                     true
                 }
                 "silent" => {
@@ -84,6 +78,10 @@ fn main() {
                 }
                 _ => false,
             };
+            if help {
+                show_help();
+                return 0;
+            }
             if matched {
                 args.remove(i);
                 continue;
@@ -148,7 +146,7 @@ fn main() {
             let download_path = "./setup.exe";
             let status = aria2_downloader(&info.url, &download_path, None);
             if status != 0 {
-                exit(status)
+                return status;
             }
 
             if force {
@@ -166,7 +164,7 @@ fn main() {
                     false,
                 );
                 if status != 0 {
-                    exit(status)
+                    return status;
                 }
             }
 
@@ -180,21 +178,26 @@ fn main() {
                 fs::remove_file(&download_path).ok();
             }
             if status != 0 {
-                exit(status)
+                return status;
             }
 
             let v1 = Versioning::new(uninstall_reg_get_string("Version").unwrap_or_default())
                 .unwrap_or_default();
             if v1 < v2 {
                 eprintln!("ERROR: Thorium isn't updated.");
-                exit(1)
+                return 1;
             }
             println!("Thorium browser has been updated.");
         } else {
             println!("You are up to date.");
         }
+        return 0;
     } else {
         eprintln!("ERROR: Could not get package info.");
-        exit(2)
+        return 2;
     }
+}
+
+fn main() -> ! {
+    process::exit(program())
 }
