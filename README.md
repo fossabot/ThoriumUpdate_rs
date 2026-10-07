@@ -1,4 +1,6 @@
 # [Thorium](https://github.com/Alex313031/thorium) Updater (Windows)
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjust-shadyumbrella%2FThoriumUpdate_rs.svg?type=shield)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjust-shadyumbrella%2FThoriumUpdate_rs?ref=badge_shield)
+
 
 Based on [`template-rs`](https://github.com/just-shadyumbrella/template-rs#prerequisites).
 
@@ -29,3 +31,7 @@ Based on [`template-rs`](https://github.com/just-shadyumbrella/template-rs#prere
 ## See for more:
 - [Bugs](../../issues?q=is%3Aissue+label%3Abug)
 - [Feature requests](../../issues?q=is%3Aissue+label%3Aenhancement)
+
+
+## License
+[![FOSSA Status](https://app.fossa.com/api/projects/git%2Bgithub.com%2Fjust-shadyumbrella%2FThoriumUpdate_rs.svg?type=large)](https://app.fossa.com/projects/git%2Bgithub.com%2Fjust-shadyumbrella%2FThoriumUpdate_rs?ref=badge_large)
